@@ -8,7 +8,7 @@ flags.DEFINE_string('dataset_dir', './datasets/small_target/',
                     'Directory with the validation data.')
 flags.DEFINE_integer('eval_interval_secs', 60,
                     'Number of seconds between evaluations.')
-flags.DEFINE_integer('num_evals', 50, 'Number of batches to evaluate.')
+flags.DEFINE_integer('num_evals', 1000, 'Number of batches to evaluate.')
 flags.DEFINE_string('log_dir', './logs/eval',
                     'Directory where to log evaluation data.')
 flags.DEFINE_string('checkpoint_dir', './logs/',

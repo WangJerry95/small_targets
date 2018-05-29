@@ -31,11 +31,11 @@ class STD(object):
 
             # feature_dim = net.shape[1] * net.shape[2] * net.shape[3]
             # net = tf.reshape(net, [-1, feature_dim])
-
+            net = slim.flatten(net)
             net = slim.fully_connected(net, 256, scope='fc1')
             net = slim.dropout(net, self.keep_prob, scope='dropout')
             self.logits = slim.fully_connected(net, 2, scope='fc2')
-
+            variables_to_restore = slim.get_model_variables()
             return self.logits
 
     def deploy(self, inputs):
