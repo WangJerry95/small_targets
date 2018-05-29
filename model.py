@@ -29,14 +29,45 @@ class STD(object):
             net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv3')
             net = slim.max_pool2d(net, [2, 2], scope='pool3')
 
-            feature_dim = net.shape[1] * net.shape[2] * net.shape[3]
-            net = tf.reshape(net, [-1, feature_dim])
+            # feature_dim = net.shape[1] * net.shape[2] * net.shape[3]
+            # net = tf.reshape(net, [-1, feature_dim])
 
             net = slim.fully_connected(net, 256, scope='fc1')
             net = slim.dropout(net, self.keep_prob, scope='dropout')
             self.logits = slim.fully_connected(net, 2, scope='fc2')
 
             return self.logits
+
+    def deploy(self, inputs):
+        with tf.variable_scope('std_32', values=[inputs]):
+            inputs = tf.to_float(inputs)
+            net = slim.repeat(inputs, 2, slim.conv2d, 32, [3, 3], scope='conv1')
+            net = slim.max_pool2d(net, [2, 2], scope='pool1')
+
+            net = slim.repeat(net, 2, slim.conv2d, 64, [3, 3], scope='conv2')
+            net = slim.max_pool2d(net, [2, 2], scope='pool2')
+
+            net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv3')
+            net = slim.max_pool2d(net, [2, 2], scope='pool3')
+
+            net = slim.conv2d(net, 256, [4, 4], padding='VALID', normalizer_fn=None, scope='conv4')
+            net = slim.dropout(net, self.keep_prob, scope='dropout')
+            net = slim.conv2d(net, 2, [1, 1], padding='VALID', normalizer_fn=None, scope='conv5')
+            self.feature_map = net
+            self.probability_map = tf.nn.softmax(net, axis=-1)[:, :, :, 1]
+
+        def name_in_checkpoint(var):
+            if "conv4" in var.op.name:
+                return var.op.name.replace("conv4", "fc1")
+            elif "conv5" in var.op.name:
+                return var.op.name.replace("conv5", "fc2")
+            else:
+                return var.op.name
+
+        variables_to_restore = slim.get_model_variables()
+        variables_to_restore = {name_in_checkpoint(var): var for var in variables_to_restore}
+        restorer = tf.train.Saver(variables_to_restore, reshape=True)
+        return restorer
 
     def arg_scope(self, is_training, weight_decay=0.0001):
         with slim.arg_scope([slim.conv2d, slim.fully_connected],

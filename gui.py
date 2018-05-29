@@ -4,13 +4,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from detect import Ui_MainWindow
 import tensorflow as tf
+from tensorflow.contrib import slim
 from model import STD
 import utils
 import numpy as np
 import cv2
 
 PROBABILITY_THRESHOLD = 0.9
-WINDOW_SIZE = (38, 38)
+WINDOW_SIZE = (32, 32)
 
 class App(QMainWindow):
 
@@ -28,7 +29,10 @@ class App(QMainWindow):
 
         self.session = tf.Session()
         self.model = STD()
-        self.model.deploy()
+        self.inputs = tf.placeholder(tf.float32, shape=[None, None, None, 1])
+        arg_scope = self.model.arg_scope(is_training=False)
+        with slim.arg_scope(arg_scope):
+            self.restorer = self.model.deploy(self.inputs)
         self.image_path = None
         self.model_path = None
 
@@ -45,16 +49,13 @@ class App(QMainWindow):
     def load_model(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        self.model_path = QFileDialog.getExistingDirectory(self, "Select model", "./checkpoints/",
+        self.model_path = QFileDialog.getExistingDirectory(self, "Select model", "./logs/",
                                                            options=options)
 
-
-        saver = tf.train.Saver(reshape=True)
         ckpt = tf.train.get_checkpoint_state(self.model_path)
         if ckpt and ckpt.model_checkpoint_path:
-            # print(ckpt.model_checkpoint_path)
-            saver.restore(self.session, ckpt.model_checkpoint_path)
-            global_step = self.session.run(self.model.g_step)
+            self.restorer.restore(self.session, ckpt.model_checkpoint_path)
+            # global_step = self.session.run(self.model.g_step)
         QMessageBox.information(self, "Message", "Model loaded!", QMessageBox.Yes)
 
     def onDetect(self):
@@ -68,10 +69,10 @@ class App(QMainWindow):
         input_tensor = img[np.newaxis, :, :, np.newaxis]
 
         probability_map, feature_map = self.session.run([self.model.probability_map, self.model.feature_map],
-                                                        feed_dict={self.model.X: input_tensor})
+                                                        feed_dict={self.inputs: input_tensor})
         probability_map = np.reshape(probability_map, [probability_map.shape[1], probability_map.shape[2]])
         feature_map = np.reshape(feature_map, [feature_map.shape[1], feature_map.shape[2], 2])
-        feature_map_pos = feature_map[:, :, 0]
+        feature_map_pos = feature_map[:, :, 1]
 
         suspect_region = np.where(probability_map > PROBABILITY_THRESHOLD)
         coordinates = np.vstack((suspect_region[1], suspect_region[0])).T  # exchange the x and y coordinates
