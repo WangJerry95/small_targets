@@ -59,21 +59,24 @@ def train(learning_rates, boundaries, weight_decay, dropout, max_epoch):
     model.eval(batch_logits, batch_labels)
     summary_op = model.summary()
     # summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
 
     slim.learning.train(train_op, FLAGS.train_dir,
                         log_every_n_steps=10,
                         global_step=model.g_step,
                         # saver=saver,
                         save_summaries_secs=5,
-                        save_interval_secs=60
+                        save_interval_secs=60,
+                        session_config=config
                         # summary_writer=writer,
                         )
 
 
 def main(_):
-    train(learning_rates=[0.0001, 0.00003, 0.00001],
-          boundaries=[9000, 12000],
-          weight_decay=0.0001,
+    train(learning_rates=[0.00001, 0.000003, 0.000003],
+          boundaries=[6000, 12000],
+          weight_decay=0.00003,
           dropout=0.5,
           max_epoch=100)
 

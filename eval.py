@@ -6,9 +6,9 @@ from datasets import dataset_factory
 flags = tf.app.flags
 flags.DEFINE_string('dataset_dir', './datasets/small_target/',
                     'Directory with the validation data.')
-flags.DEFINE_integer('eval_interval_secs', 60,
+flags.DEFINE_integer('eval_interval_secs', 30,
                     'Number of seconds between evaluations.')
-flags.DEFINE_integer('num_evals', 1000, 'Number of batches to evaluate.')
+flags.DEFINE_integer('num_evals', 200, 'Number of batches to evaluate.')
 flags.DEFINE_string('log_dir', './logs/eval',
                     'Directory where to log evaluation data.')
 flags.DEFINE_string('checkpoint_dir', './logs/',
@@ -53,6 +53,9 @@ def main(_):
 
     # evaluate on the model saved at the checkpoint directory
     # evaluate every eval_interval_secs
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+
     slim.evaluation.evaluation_loop(
         '',
         FLAGS.checkpoint_dir,
@@ -60,7 +63,8 @@ def main(_):
         num_evals=FLAGS.num_evals,
         eval_op=metrics_to_updates.values(),
         eval_interval_secs=FLAGS.eval_interval_secs,
-        max_number_of_evaluations=5)
+        max_number_of_evaluations=None,
+        session_config=config)
 
 
 if __name__ == "__main__":

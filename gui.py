@@ -10,8 +10,8 @@ import utils
 import numpy as np
 import cv2
 
-PROBABILITY_THRESHOLD = 0.9
-WINDOW_SIZE = (32, 32)
+PROBABILITY_THRESHOLD = 0.99
+WINDOW_SIZE = (38, 38)
 
 class App(QMainWindow):
 
@@ -79,7 +79,7 @@ class App(QMainWindow):
         scores = [feature_map_pos[y, x] for x, y in coordinates]
         coordinates = 8 * coordinates  # mapping to corresponding coordinate in origin image
 
-        suppressed_coordinate = utils.non_max_suppress(coordinates, scores, WINDOW_SIZE, 0.01)
+        suppressed_coordinate = utils.non_max_suppress(coordinates, scores, WINDOW_SIZE, 0.0)
 
         detect_out = img.copy()
         for coordinate in suppressed_coordinate:

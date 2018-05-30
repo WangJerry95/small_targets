@@ -21,13 +21,13 @@ class STD(object):
         with tf.variable_scope('std_32', values=[inputs]):
             inputs = tf.to_float(inputs)
             net = slim.repeat(inputs, 2, slim.conv2d, 32, [3, 3], scope='conv1')
-            net = slim.max_pool2d(net, [2, 2], scope='pool1')
+            net = slim.max_pool2d(net, [2, 2], scope='pool1', padding='VALID')
 
             net = slim.repeat(net, 2, slim.conv2d, 64, [3, 3], scope='conv2')
-            net = slim.max_pool2d(net, [2, 2], scope='pool2')
+            net = slim.max_pool2d(net, [2, 2], scope='pool2', padding='VALID')
 
             net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv3')
-            net = slim.max_pool2d(net, [2, 2], scope='pool3')
+            net = slim.max_pool2d(net, [2, 2], scope='pool3', padding='VALID')
 
             # feature_dim = net.shape[1] * net.shape[2] * net.shape[3]
             # net = tf.reshape(net, [-1, feature_dim])
@@ -42,13 +42,13 @@ class STD(object):
         with tf.variable_scope('std_32', values=[inputs]):
             inputs = tf.to_float(inputs)
             net = slim.repeat(inputs, 2, slim.conv2d, 32, [3, 3], scope='conv1')
-            net = slim.max_pool2d(net, [2, 2], scope='pool1')
+            net = slim.max_pool2d(net, [2, 2], scope='pool1',padding='VALID')
 
             net = slim.repeat(net, 2, slim.conv2d, 64, [3, 3], scope='conv2')
-            net = slim.max_pool2d(net, [2, 2], scope='pool2')
+            net = slim.max_pool2d(net, [2, 2], scope='pool2',padding='VALID')
 
             net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv3')
-            net = slim.max_pool2d(net, [2, 2], scope='pool3')
+            net = slim.max_pool2d(net, [2, 2], scope='pool3',padding='VALID')
 
             net = slim.conv2d(net, 256, [4, 4], padding='VALID', normalizer_fn=None, scope='conv4')
             net = slim.dropout(net, self.keep_prob, scope='dropout')
@@ -74,99 +74,24 @@ class STD(object):
                             activation_fn=tf.nn.relu,
                             weights_regularizer=slim.l2_regularizer(weight_decay),
                             weights_initializer=slim.xavier_initializer(),
-                            biases_initializer=tf.zeros_initializer()):
-            with slim.arg_scope([slim.conv2d, slim.max_pool2d],
+                            biases_initializer=tf.truncated_normal_initializer(stddev=0.01)):
+            with slim.arg_scope([slim.conv2d],
                                 padding='SAME'):
-                with slim.arg_scope([slim.conv2d],
-                                    normalizer_fn=slim.batch_norm,
-                                    normalizer_params={'is_training': is_training, 'decay': 0.90}):
-                    with slim.arg_scope([slim.dropout], is_training=is_training) as sc:
+                # with slim.arg_scope([slim.conv2d],
+                #                     normalizer_fn=slim.batch_norm,
+                #                     normalizer_params={'is_training': is_training, 'decay': 0.90}):
+                with slim.arg_scope([slim.dropout], is_training=is_training) as sc:
 
-                        return sc
+                    return sc
 
-    # def deploy(self):
-    #     self.X = tf.placeholder(tf.float32, shape=[None, None, None, 1], name='inputs')
-    #     conv1 = conv_relu(self.X,
-    #                       filters=32,
-    #                       ksize=5,
-    #                       stride=1,
-    #                       padding='SAME',
-    #                       regularizer=self.regularizer,
-    #                       scope_name='conv1')
-    #
-    #     pool1 = maxpool(conv1,
-    #                     ksize=2,
-    #                     stride=2,
-    #                     padding='VALID',
-    #                     scope_name='pool1')
-    #
-    #     conv2 = conv_relu(pool1,
-    #                       filters=64,
-    #                       ksize=5,
-    #                       stride=1,
-    #                       padding='SAME',
-    #                       regularizer=self.regularizer,
-    #                       scope_name='conv2')
-    #
-    #     pool2 = maxpool(conv2,
-    #                     ksize=2,
-    #                     stride=2,
-    #                     padding='VALID',
-    #                     scope_name='pool2')
-    #
-    #     conv3 = conv_relu(pool2,
-    #                       filters=128,
-    #                       ksize=5,
-    #                       stride=1,
-    #                       padding='SAME',
-    #                       regularizer=self.regularizer,
-    #                       scope_name='conv3')
-    #
-    #     pool3 = maxpool(conv3,
-    #                     ksize=2,
-    #                     stride=2,
-    #                     padding='VALID',
-    #                     scope_name='pool3')
-    #
-    #     with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
-    #         conv4_kernel = tf.get_variable('weights', shape=[4, 4, 128, 64],
-    #                                        initializer=tf.truncated_normal_initializer(),
-    #                                        regularizer=self.regularizer)
-    #         conv4_biases = tf.get_variable('biases',shape=[64],
-    #                                        initializer=tf.truncated_normal_initializer())
-    #
-    #     with tf.variable_scope('logits', reuse=tf.AUTO_REUSE):
-    #         conv5_kernel = tf.get_variable('weights',
-    #                                        shape=[1, 1, 64, 2],
-    #                                        initializer=tf.truncated_normal_initializer(),
-    #                                        regularizer=self.regularizer)
-    #         conv5_biases = tf.get_variable('biases',shape=[2],
-    #                                        initializer=tf.truncated_normal_initializer())
-    #
-    #     conv4 = tf.nn.conv2d(pool3,
-    #                          filter=conv4_kernel,
-    #                          strides=[1,1,1,1],
-    #                          padding='VALID',
-    #                          name='conv4')
-    #     conv4 = tf.nn.relu(tf.add(conv4, conv4_biases))
-    #
-    #     conv5 = tf.nn.conv2d(conv4,
-    #                          filter=conv5_kernel,
-    #                          strides=[1,1,1,1],
-    #                          padding='VALID',
-    #                          name='conv5')
-    #     conv5 = tf.add(conv5, conv5_biases)
-    #
-    #     self.feature_map = conv5
-    #
-    #     entropy = tf.nn.softmax(conv5, axis=-1)
-    #     self.probability_map = entropy[:, :, :, 0]
 
     def losses(self, logits, labels):
         with tf.name_scope('loss'):
             # labels = tf.squeeze(labels)
+            class_weights = tf.constant([0.8, 0.2])
+            weights = tf.gather(class_weights, labels)
             labels = tf.one_hot(labels, depth=2, on_value=1, off_value=0)
-            self.loss = tf.losses.softmax_cross_entropy(labels, logits)
+            self.loss = tf.losses.softmax_cross_entropy(labels, logits, weights=weights)
             self.reg_loss = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             self.total_loss = tf.losses.get_total_loss()
 
@@ -181,7 +106,7 @@ class STD(object):
             self.loss = tf.add(self.focal_loss, self.reg_loss, name='loss')
 
     def optimize(self):
-        optimizer = tf.train.AdamOptimizer(self.lr)
+        optimizer = tf.train.RMSPropOptimizer(self.lr)
         train_op = slim.learning.create_train_op(self.total_loss, optimizer,
                                                  global_step=self.g_step)
         return train_op
