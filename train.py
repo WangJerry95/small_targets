@@ -66,7 +66,7 @@ def train(learning_rates, boundaries, weight_decay, dropout, max_epoch):
                         log_every_n_steps=10,
                         global_step=model.g_step,
                         # saver=saver,
-                        save_summaries_secs=5,
+                        save_summaries_secs=10,
                         save_interval_secs=60,
                         session_config=config
                         # summary_writer=writer,

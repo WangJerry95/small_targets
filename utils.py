@@ -78,7 +78,7 @@ def safe_mkdir(path):
 
 def non_max_suppress(coordinates, scores, window_size, iou_threshold):
     """
-    :param coordinates: ndarray of shape [n,2], each row stands for a top left point of a window
+    :param coordinates: ndarray of shape [n,3], each row stands for a top left point of a window and its class
     :param scores: the scores for each point
     :param window_size: tuple of (window_width, window_height)
     :param iou_threshold: iou threshold
@@ -92,7 +92,7 @@ def non_max_suppress(coordinates, scores, window_size, iou_threshold):
         for j in range(i+1, len(scores)):
             if is_suppressed[j]:
                 continue
-            iou = get_iou(coordinates[indices[i]], coordinates[indices[j]], window_size)
+            iou = get_iou(coordinates[indices[i]][0:-1], coordinates[indices[j]][0:-1], window_size)
             if iou > iou_threshold:
                 is_suppressed[j] = True
     suppress_indices = indices[np.where(is_suppressed)]

@@ -34,7 +34,7 @@ class STD(object):
             net = slim.flatten(net)
             net = slim.fully_connected(net, 256, scope='fc1')
             net = slim.dropout(net, self.keep_prob, scope='dropout')
-            self.logits = slim.fully_connected(net, 2, scope='fc2')
+            self.logits = slim.fully_connected(net, 3, scope='fc2')
             variables_to_restore = slim.get_model_variables()
             return self.logits
 
@@ -52,9 +52,9 @@ class STD(object):
 
             net = slim.conv2d(net, 256, [4, 4], padding='VALID', normalizer_fn=None, scope='conv4')
             net = slim.dropout(net, self.keep_prob, scope='dropout')
-            net = slim.conv2d(net, 2, [1, 1], padding='VALID', normalizer_fn=None, scope='conv5')
+            net = slim.conv2d(net, 3, [1, 1], padding='VALID', normalizer_fn=None, scope='conv5')
             self.feature_map = net
-            self.probability_map = tf.nn.softmax(net, axis=-1)[:, :, :, 1]
+            self.probability_map = tf.nn.softmax(net, axis=-1)[:, :, :, 1:]
 
         def name_in_checkpoint(var):
             if "conv4" in var.op.name:
@@ -88,9 +88,9 @@ class STD(object):
     def losses(self, logits, labels):
         with tf.name_scope('loss'):
             # labels = tf.squeeze(labels)
-            class_weights = tf.constant([0.8, 0.2])
+            class_weights = tf.constant([0.6, 0.2, 0.2])
             weights = tf.gather(class_weights, labels)
-            labels = tf.one_hot(labels, depth=2, on_value=1, off_value=0)
+            labels = tf.one_hot(labels, depth=3, on_value=1, off_value=0)
             self.loss = tf.losses.softmax_cross_entropy(labels, logits, weights=weights)
             self.reg_loss = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             self.total_loss = tf.losses.get_total_loss()
